@@ -1,0 +1,1 @@
+summon item ~ ~ ~ {Motion:[0.0,0.3,0.0],Item:{Count:1b,id:"<spawn_egg>_spawn_egg",tag:{display:{Name:'{"text": "<text>","italic": false<color>}'},EntityTag:{id:"area_effect_cloud",Tags:[eg.<id>]}<enchant>,HideFlags:1}}}
