@@ -1,0 +1,20 @@
+{
+    "type": "chest",
+    "pools": [
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type":"item",
+                    "name": "<spawn_egg>_spawn_egg",
+                    "functions": [
+                        {
+                            "function":"set_nbt",
+                            "tag": "{HideFlags:1<enchant>,display:{Name:'{\"text\":\"<text>\",\"italic\":false<color>}'},EntityTag:{id:\"minecraft:area_effect_cloud\",Tags:[eg.<id>]}}"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

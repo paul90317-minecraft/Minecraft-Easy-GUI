@@ -1,1 +1,1 @@
-summon item ~ ~ ~ {Motion:[0.0,0.3,0.0],Item:{Count:1b,id:"<spawn_egg>_spawn_egg",tag:{display:{Name:'{"text": "<text>","italic": false<color>}'},EntityTag:{id:"area_effect_cloud",Tags:[eg.<id>]}<enchant>,HideFlags:1}}}
+summon item ~ ~ ~ {CustomNameVisible:1b,CustomName:'{"text":"<text>","italic":false<color>}',Motion:[0.0,0.3,0.0],Item:{Count:1b,id:"minecraft:<spawn_egg>_spawn_egg",tag:{display:{Name:'{"text":"<text>","italic":false<color>}'},EntityTag:{id:"minecraft:area_effect_cloud",Tags:[eg.<id>]}<enchant>,HideFlags:1}}}

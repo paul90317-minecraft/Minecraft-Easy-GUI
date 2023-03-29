@@ -38,6 +38,8 @@ class Slot:
     LABEL_EVENT=open(path.join(path.dirname(__file__), 'template/slot_type/label/event.mcfunction'),'r').read()
     N_LEFT_ENTRY=open(path.join(path.dirname(__file__), 'template/slot_type/n_left/entry.mcfunction'),'r').read()
     N_LEFT_EVENT=open(path.join(path.dirname(__file__), 'template/slot_type/n_left/event.mcfunction'),'r').read()
+    DROP_ENTRY=open(path.join(path.dirname(__file__), 'template/slot_type/drop/entry.mcfunction'),'r').read()
+    DROP_EVENT=open(path.join(path.dirname(__file__), 'template/slot_type/drop/event.mcfunction'),'r').read()
     LABEL_ITEMS={'cookie'}
     @staticmethod
     def codeGen(containerId:str,slot:int,object:dict)->tuple[str,str]:
@@ -71,6 +73,16 @@ class Slot:
                 template(Slot.N_LEFT_EVENT,{
                     'slot':slot,
                     'n':n
+                })
+            )
+        elif slotType == 'drop':
+            return (
+                template(Slot.DROP_ENTRY,{
+                    'slot':slot,
+                    'id':containerId
+                }),
+                template(Slot.DROP_EVENT,{
+                    'slot':slot
                 })
             )
         else:
@@ -129,6 +141,15 @@ write_code(template(open(path.join(path.dirname(__file__),'template/tile/spawn_e
     'enchant':',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if spawn_egg.enchant else ''
 }),
 f'data/easy_gui/functions/containers/{containerId}/spawn_egg.mcfunction')
+
+write_code(template(open(path.join(path.dirname(__file__),'template/tile/spawn_egg.json')).read(),{
+    "id":containerId,
+    'spawn_egg':spawn_egg.id,
+    'text':spawn_egg.text,
+    'color':f',\\"color\\":\\"{spawn_egg.color}\\"' if spawn_egg.color is not None else '',
+    'enchant':',Enchantments:[{id:\\"minecraft:binding_curse\\",lvl:1}]' if spawn_egg.enchant else ''
+}),
+f'data/easy_gui/loot_tables/{containerId}.json')
 
 container_item=Item(data['entity']['item'])
 write_code(template(open(path.join(path.dirname(__file__),'template/tile/try_spawn/load.mcfunction')).read(),{

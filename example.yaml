@@ -54,6 +54,4 @@ slot:
     item:
       id: black_stained_glass_pane
   8:
-    type: label
-    item:
-      id: black_stained_glass_pane
+    type: drop
