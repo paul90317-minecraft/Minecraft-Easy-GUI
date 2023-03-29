@@ -5,17 +5,26 @@ import os
 import json
 from os import path
 
-def template(code: str, pattern:dict[str,int|str]):
+def template(code: str, pattern:dict[str,int|str])->str:
     for k,v in pattern.items():
         code =code.replace(f'<{k}>',str(v))
     return code
 
-def write_code(code :str, filename :str):
+def write_code(code :str, filename :str)->None:
     dirname=path.dirname(filename)
     if len(dirname)>0:
         os.makedirs(dirname,exist_ok=True)
     with open(filename,'w')as f:
         f.write(code)
+
+def update_values(new_values:set,filename:str)->None:
+    if os.path.isfile(filename):
+        with open(filename,'r')as f:
+            for item in json.load(f)['values']:
+                new_values.add(item)
+    write_code(json.dumps({
+        "values":list(new_values)
+    }),filename)
 
 class Item:
     def __init__(self,data:dict) -> None:
@@ -134,31 +143,14 @@ write_code(template(open(path.join(path.dirname(__file__),'template/tile/try_spa
 }),
 f'data/easy_gui/functions/containers/{containerId}/try_spawn/load.mcfunction')
 
-if os.path.isfile('data/easy_gui/tags/items/label.json'):
-    with open('data/easy_gui/tags/items/label.json','r')as f:
-        for item in json.load(f)['values']:
-            Slot.LABEL_ITEMS.add(item)
-write_code(json.dumps({
-    "values":list(Slot.LABEL_ITEMS)
-}),'data/easy_gui/tags/items/label.json')
+update_values(Slot.LABEL_ITEMS,
+              'data/easy_gui/tags/items/label.json')
 
-temp={f"easy_gui:containers/{containerId}/search/item_frame"}
-if os.path.isfile('data/easy_gui/tags/functions/search/item_frame.json'):
-    with open('data/easy_gui/tags/functions/search/item_frame.json','r')as f:
-        for item in json.load(f)['values']:
-            temp.add(item)
-write_code(json.dumps({
-    "values":list(temp)
-}),'data/easy_gui/tags/functions/search/item_frame.json')
+update_values({f"easy_gui:containers/{containerId}/search/item_frame"},
+              'data/easy_gui/tags/functions/search/item_frame.json')
 
-temp={f"easy_gui:containers/{containerId}/search/area_effect_cloud"}
-if os.path.isfile('data/easy_gui/tags/functions/search/area_effect_cloud.json'):
-    with open('data/easy_gui/tags/functions/search/area_effect_cloud.json','r')as f:
-        for item in json.load(f)['values']:
-            temp.add(item)
-write_code(json.dumps({
-    "values":list(temp)
-}),'data/easy_gui/tags/functions/search/area_effect_cloud.json')
+update_values({f"easy_gui:containers/{containerId}/search/area_effect_cloud"},
+              'data/easy_gui/tags/functions/search/area_effect_cloud.json')
 
 write_code(open(path.join(path.dirname(__file__),'template/game/tick.mcfunction'),'r').read(),
            'data/easy_gui/functions/tick.mcfunction')
@@ -166,16 +158,17 @@ write_code(open(path.join(path.dirname(__file__),'template/game/tick.mcfunction'
 write_code(open(path.join(path.dirname(__file__),'template/game/load.mcfunction'),'r').read(),
            'data/easy_gui/functions/load.mcfunction')
 
-write_code(json.dumps({
-    "pack":{
-        "pack_format":10,
-        "description": ""
-    }
-}),
-'pack.mcmeta')
+if not os.path.exists('pack.mcmeta'):
+    write_code(json.dumps({
+        "pack":{
+            "pack_format":10,
+            "description": ""
+        }
+    }),
+    'pack.mcmeta')
 
-write_code(json.dumps({"values":["easy_gui:tick"]}),
-           'data/minecraft/tags/functions/tick.json')
+update_values({"easy_gui:tick"},
+              'data/minecraft/tags/functions/tick.json')
 
-write_code(json.dumps({"values":["easy_gui:load"]}),
-           'data/minecraft/tags/functions/load.json')
+update_values({"easy_gui:load"},
+              'data/minecraft/tags/functions/load.json')
