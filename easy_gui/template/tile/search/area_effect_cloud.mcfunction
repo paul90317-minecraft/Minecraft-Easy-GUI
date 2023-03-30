@@ -1,1 +1,1 @@
-execute if entity @s[tag=eg.<id>] run function easy_gui:containers/<id>/try_spawn/check
+execute if entity @s[tag=eg.<id>] run function eg:tile/<id>/try_spawn/check

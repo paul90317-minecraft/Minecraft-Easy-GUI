@@ -1,2 +1,2 @@
 kill @s
-function easy_gui:containers/<id>/spawn_egg
+function eg:tile/<id>/spawn_egg

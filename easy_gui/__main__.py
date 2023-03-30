@@ -35,25 +35,26 @@ class Item:
 
 class Slot:
     LABEL_ENTRY=open(path.join(path.dirname(__file__), 'template/slot_type/label/entry.mcfunction'),'r').read()
-    LABEL_EVENT=open(path.join(path.dirname(__file__), 'template/slot_type/label/event.mcfunction'),'r').read()
+    LABEL_EH=open(path.join(path.dirname(__file__), 'template/slot_type/label/eh.mcfunction'),'r').read()
     N_LEFT_ENTRY=open(path.join(path.dirname(__file__), 'template/slot_type/n_left/entry.mcfunction'),'r').read()
-    N_LEFT_EVENT=open(path.join(path.dirname(__file__), 'template/slot_type/n_left/event.mcfunction'),'r').read()
-    DROP_ENTRY=open(path.join(path.dirname(__file__), 'template/slot_type/drop/entry.mcfunction'),'r').read()
-    DROP_EVENT=open(path.join(path.dirname(__file__), 'template/slot_type/drop/event.mcfunction'),'r').read()
+    N_LEFT_EH=open(path.join(path.dirname(__file__), 'template/slot_type/n_left/eh.mcfunction'),'r').read()
+    DROP_ENTRY_IF=open(path.join(path.dirname(__file__), 'template/slot_type/drop/entry_if.mcfunction'),'r').read()
+    DROP_ENTRY_UNLESS=open(path.join(path.dirname(__file__), 'template/slot_type/drop/entry_unless.mcfunction'),'r').read()
+    DROP_EH=open(path.join(path.dirname(__file__), 'template/slot_type/drop/eh.mcfunction'),'r').read()
     LABEL_ITEMS={'cookie'}
     @staticmethod
-    def codeGen(containerId:str,slot:int,object:dict)->tuple[str,str]:
-        slotType=object['type']
-        if slotType == 'label':
+    def codeGen(tile_id:str,slot:int,object:dict)->tuple[str,str]:
+        slot_type = object['type']
+        if slot_type == 'label':
             item = Item(object['item'])
             click = object.get('click','')
             Slot.LABEL_ITEMS.add(item.id)
             return (
                 template(Slot.LABEL_ENTRY,{
                     'slot':slot,
-                    'id':containerId
+                    'id':tile_id
                 }),
-                template(Slot.LABEL_EVENT,{
+                template(Slot.LABEL_EH,{
                     'slot':slot,
                     'item':item.id,
                     'text':item.text,
@@ -62,98 +63,137 @@ class Slot:
                     'click':click
                 })
             )
-        elif slotType == 'n_left':
+        elif slot_type == 'n_left':
             n :int = object['n']
             return (
                 template(Slot.N_LEFT_ENTRY,{
                     'slot':slot,
-                    'id':containerId,
+                    'id':tile_id,
                     'n_add_one':n+1
                 }),
-                template(Slot.N_LEFT_EVENT,{
+                template(Slot.N_LEFT_EH,{
                     'slot':slot,
                     'n':n
                 })
             )
-        elif slotType == 'drop':
-            return (
-                template(Slot.DROP_ENTRY,{
-                    'slot':slot,
-                    'id':containerId
-                }),
-                template(Slot.DROP_EVENT,{
-                    'slot':slot
-                })
-            )
+        elif slot_type == 'drop':
+            cond:str = object.get('cond','never')
+            tag:str = object.get('tag', None)
+            data:str = object.get('data',None)
+            item_id:str = object.get('id',None)
+            if cond == 'if':
+                return (
+                    template(Slot.DROP_ENTRY_IF,{
+                        'slot':slot,
+                        'tile_id':tile_id,
+                        'tag':f',tag:{tag}' if tag is not None else '',
+                        'item_id':f',id:"{item_id}"'if item_id is not None else '',
+                        'data':f'.tag.{data}' if data is not None else ''
+                    }),
+                    template(Slot.DROP_EH,{
+                        'slot':slot
+                    })
+                )
+            elif cond == 'unless':
+                return (
+                    template(Slot.DROP_ENTRY_UNLESS,{
+                        'slot':slot,
+                        'tile_id':tile_id,
+                        'tag':f',tag:{tag}' if tag is not None else '',
+                        'item_id':f',id:"{item_id}"'if item_id is not None else '',
+                        'data':f'.tag.{data}' if data is not None else ''
+                    }),
+                    template(Slot.DROP_EH,{
+                        'slot':slot
+                    })
+                )
+            elif cond == 'never':
+                return (
+                    '',
+                    template(Slot.DROP_EH,{
+                        'slot':slot
+                    })
+                )
+            else:
+                exit(f'error: unknown condiction {cond} of drop slot type')
         else:
-            exit(f'error: unknown slot type {slotType}')
+            exit(f'error: unknown slot type {slot_type}')
             
         
 
 with open(sys.argv[1],'r') as f:
     data:dict = yaml.load(f, Loader=SafeLoader)
 
-containerId=data['id']
+tile_id=data['id']
 entries=''
 for slot,object in data['slot'].items():
-    entry,event=Slot.codeGen(containerId,slot,object)
-    write_code(event,f'data/easy_gui/functions/containers/{containerId}/slot/{slot}/event.mcfunction')
-    entries+=entry
+    if isinstance(slot,str):
+        f,t = slot.split("..")
+        f=int(f)
+        t=int(t)
+        for i in range(f, t + 1):
+            entry,eh=Slot.codeGen(tile_id,i,object)
+            write_code(eh,f'data/eg/functions/tile/{tile_id}/slot/{i}/eh.mcfunction')
+            entries+=entry
+    else:
+        entry,eh=Slot.codeGen(tile_id,slot,object)
+        write_code(eh,f'data/eg/functions/tile/{tile_id}/slot/{slot}/eh.mcfunction')
+        entries+=entry
 container_block=Item(data['entity']['block'])
 write_code(template(open(path.join(path.dirname(__file__),'template/tile/tick.mcfunction')).read(),{
-    "id":containerId,
+    "id":tile_id,
     "block":container_block.id
 })+entries,
-f'data/easy_gui/functions/containers/{containerId}/tick.mcfunction')
+f'data/eg/functions/tile/{tile_id}/tick.mcfunction')
 
 write_code(template(open(path.join(path.dirname(__file__),'template/tile/destroy.mcfunction')).read(),{
-    "id":containerId,
+    "id":tile_id,
     "block":container_block.id
 }),
-f'data/easy_gui/functions/containers/{containerId}/destroy.mcfunction')
+f'data/eg/functions/tile/{tile_id}/destroy.mcfunction')
 
 write_code(template(open(path.join(path.dirname(__file__),'template/tile/search/item_frame.mcfunction')).read(),{
-    "id":containerId
+    "id":tile_id
 }),
-f'data/easy_gui/functions/containers/{containerId}/search/item_frame.mcfunction')
+f'data/eg/functions/tile/{tile_id}/search/item_frame.mcfunction')
 
 write_code(template(open(path.join(path.dirname(__file__),'template/tile/search/area_effect_cloud.mcfunction')).read(),{
-    "id":containerId
+    "id":tile_id
 }),
-f'data/easy_gui/functions/containers/{containerId}/search/area_effect_cloud.mcfunction')
+f'data/eg/functions/tile/{tile_id}/search/area_effect_cloud.mcfunction')
 
 write_code(template(open(path.join(path.dirname(__file__),'template/tile/try_spawn/cancel.mcfunction')).read(),{
-    "id":containerId
+    "id":tile_id
 }),
-f'data/easy_gui/functions/containers/{containerId}/try_spawn/cancel.mcfunction')
+f'data/eg/functions/tile/{tile_id}/try_spawn/cancel.mcfunction')
 
 write_code(template(open(path.join(path.dirname(__file__),'template/tile/try_spawn/check.mcfunction')).read(),{
-    "id":containerId
+    "id":tile_id
 }),
-f'data/easy_gui/functions/containers/{containerId}/try_spawn/check.mcfunction')
+f'data/eg/functions/tile/{tile_id}/try_spawn/check.mcfunction')
 
 spawn_egg=Item(data['spawn_egg'])
 write_code(template(open(path.join(path.dirname(__file__),'template/tile/spawn_egg.mcfunction')).read(),{
-    "id":containerId,
+    "id":tile_id,
     'spawn_egg':spawn_egg.id,
     'text':spawn_egg.text,
     'color':f',"color":"{spawn_egg.color}"' if spawn_egg.color is not None else '',
     'enchant':',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if spawn_egg.enchant else ''
 }),
-f'data/easy_gui/functions/containers/{containerId}/spawn_egg.mcfunction')
+f'data/eg/functions/tile/{tile_id}/spawn_egg.mcfunction')
 
 write_code(template(open(path.join(path.dirname(__file__),'template/tile/spawn_egg.json')).read(),{
-    "id":containerId,
+    "id":tile_id,
     'spawn_egg':spawn_egg.id,
     'text':spawn_egg.text,
     'color':f',\\"color\\":\\"{spawn_egg.color}\\"' if spawn_egg.color is not None else '',
     'enchant':',Enchantments:[{id:\\"minecraft:binding_curse\\",lvl:1}]' if spawn_egg.enchant else ''
 }),
-f'data/easy_gui/loot_tables/{containerId}.json')
+f'data/eg/loot_tables/{tile_id}.json')
 
 container_item=Item(data['entity']['item'])
 write_code(template(open(path.join(path.dirname(__file__),'template/tile/try_spawn/load.mcfunction')).read(),{
-    "id":containerId,
+    "id":tile_id,
     'item':container_item.id,
     'item_text':container_item.text,
     'item_color':f',"color":"{container_item.color}"' if container_item.color is not None else '',
@@ -162,22 +202,22 @@ write_code(template(open(path.join(path.dirname(__file__),'template/tile/try_spa
     'block_text':container_block.text,
     'block_color':f',"color":"{container_block.color}"' if container_block.color is not None else '',
 }),
-f'data/easy_gui/functions/containers/{containerId}/try_spawn/load.mcfunction')
+f'data/eg/functions/tile/{tile_id}/try_spawn/load.mcfunction')
 
 update_values(Slot.LABEL_ITEMS,
-              'data/easy_gui/tags/items/label.json')
+              'data/eg/tags/items/label.json')
 
-update_values({f"easy_gui:containers/{containerId}/search/item_frame"},
-              'data/easy_gui/tags/functions/search/item_frame.json')
+update_values({f"eg:tile/{tile_id}/search/item_frame"},
+              'data/eg/tags/functions/search/item_frame.json')
 
-update_values({f"easy_gui:containers/{containerId}/search/area_effect_cloud"},
-              'data/easy_gui/tags/functions/search/area_effect_cloud.json')
+update_values({f"eg:tile/{tile_id}/search/area_effect_cloud"},
+              'data/eg/tags/functions/search/area_effect_cloud.json')
 
 write_code(open(path.join(path.dirname(__file__),'template/game/tick.mcfunction'),'r').read(),
-           'data/easy_gui/functions/tick.mcfunction')
+           'data/eg/functions/tick.mcfunction')
 
 write_code(open(path.join(path.dirname(__file__),'template/game/load.mcfunction'),'r').read(),
-           'data/easy_gui/functions/load.mcfunction')
+           'data/eg/functions/load.mcfunction')
 
 if not os.path.exists('pack.mcmeta'):
     write_code(json.dumps({
@@ -188,8 +228,8 @@ if not os.path.exists('pack.mcmeta'):
     }),
     'pack.mcmeta')
 
-update_values({"easy_gui:tick"},
+update_values({"eg:tick"},
               'data/minecraft/tags/functions/tick.json')
 
-update_values({"easy_gui:load"},
+update_values({"eg:load"},
               'data/minecraft/tags/functions/load.json')

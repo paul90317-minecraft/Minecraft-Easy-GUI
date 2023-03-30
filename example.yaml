@@ -1,33 +1,25 @@
-id: scribing_table
+id: example
 
 spawn_egg:
   id: slime
-  text: Scribing Table
+  text: Example GUI
   enchant: true
   color: dark_purple
 
 entity:
   block:
     id: dispenser
-    text: Scribing Table
+    text: Example GUI
     enchant: true
     color: dark_purple
   item:
     id: writable_book
-    text: Scribing Table
+    text: Example GUI
     enchant: true
     color: dark_purple
 
 slot:
-  0:
-    type: label
-    item:
-      id: black_stained_glass_pane
-  1: 
-    type: label
-    item:
-      id: black_stained_glass_pane
-  2:
+  0..2:
     type: label
     item:
       id: black_stained_glass_pane
@@ -45,13 +37,5 @@ slot:
   5:
     type: n_left
     n: 1
-  6:
-    type: label
-    item:
-      id: black_stained_glass_pane
-  7: 
-    type: label
-    item:
-      id: black_stained_glass_pane
-  8:
+  6..8:
     type: drop
