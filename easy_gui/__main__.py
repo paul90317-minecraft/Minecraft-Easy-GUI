@@ -180,7 +180,7 @@ for slots, object in data['slot'].items():
             write_code(
                 eh, f'data/eg/functions/tile/{tile_id}/slot/{slot}/eh.mcfunction')
             entries += entry
-
+entries += data.get('tick', '')
 write_code(entries,
            f'data/eg/functions/tile/{tile_id}/tick.mcfunction')
 

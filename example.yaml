@@ -6,6 +6,8 @@ spawn_egg:
   enchant: true
   color: dark_purple
 
+tick: say tick
+
 entity:
   block:
     id: dispenser
