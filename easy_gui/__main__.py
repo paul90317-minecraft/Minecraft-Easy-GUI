@@ -47,6 +47,7 @@ class Item:
         self.enchant = data.get('enchant', False)
         self.text = data.get('text', '')
         self.color = data.get('color', None)
+        self.tag = data.get('tag', {})
 
 
 class Slot:
@@ -95,7 +96,7 @@ class Slot:
                 })
             )
         elif slot_type == 'drop':
-            cond: str = object.get('cond', 'never')
+            cond: str = object.get('cond', 'undefined')
             tag: str = object.get('tag', None)
             data: str = object.get('data', None)
             item_id: str = object.get('id', None)
@@ -132,6 +133,19 @@ class Slot:
                         'slot': slot
                     })
                 )
+            elif cond == 'always':
+                return (
+                    template(Slot.DROP_ENTRY_IF, {
+                        'slot': slot,
+                        'tile_id': tile_id,
+                        'tag': '',
+                        'item_id': '',
+                        'data': ''
+                    }),
+                    template(Slot.DROP_EH, {
+                        'slot': slot
+                    })
+                )
             else:
                 exit(f'error: unknown condiction {cond} of drop slot type')
         else:
@@ -142,95 +156,165 @@ with open(sys.argv[1], 'r') as f:
     data: dict = yaml.load(f, Loader=SafeLoader)
 
 tile_id = data['id']
-entries = ''
-for slot, object in data['slot'].items():
-    if isinstance(slot, str):
-        f, t = slot.split("..")
-        f = int(f)
-        t = int(t)
-        for i in range(f, t + 1):
-            entry, eh = Slot.codeGen(tile_id, i, object)
-            write_code(
-                eh, f'data/eg/functions/tile/{tile_id}/slot/{i}/eh.mcfunction')
-            entries += entry
-    else:
-        entry, eh = Slot.codeGen(tile_id, slot, object)
-        write_code(
-            eh, f'data/eg/functions/tile/{tile_id}/slot/{slot}/eh.mcfunction')
-        entries += entry
 container_block = Item(data['entity']['block'])
-write_code(template(get_resource('template/tile/tick.mcfunction'), {
+container_item = Item(data['entity']['item'])
+setblock = data.get('setblock', 'destroy')
+entries = template(get_resource('template/tile/tick.mcfunction'), {
     "id": tile_id,
     "block": container_block.id
-})+entries,
-    f'data/eg/functions/tile/{tile_id}/tick.mcfunction')
+})
+for slots, object in data['slot'].items():
+    slots = str(slots).split(',')
+    for slot in slots:
+        if slot.find('..') != -1:
+            f, t = slot.split("..")
+            f = int(f)
+            t = int(t)
+            for i in range(f, t + 1):
+                entry, eh = Slot.codeGen(tile_id, i, object)
+                write_code(
+                    eh, f'data/eg/functions/tile/{tile_id}/slot/{i}/eh.mcfunction')
+                entries += entry
+        else:
+            entry, eh = Slot.codeGen(tile_id, slot, object)
+            write_code(
+                eh, f'data/eg/functions/tile/{tile_id}/slot/{slot}/eh.mcfunction')
+            entries += entry
 
-write_code(template(get_resource('template/tile/destroy.mcfunction'), {
-    "id": tile_id,
-    "block": container_block.id
-}),
-    f'data/eg/functions/tile/{tile_id}/destroy.mcfunction')
+write_code(entries,
+           f'data/eg/functions/tile/{tile_id}/tick.mcfunction')
 
 write_code(template(get_resource('template/tile/search/item_frame.mcfunction'), {
     "id": tile_id
 }),
     f'data/eg/functions/tile/{tile_id}/search/item_frame.mcfunction')
 
-write_code(template(get_resource('template/tile/search/area_effect_cloud.mcfunction'), {
-    "id": tile_id
-}),
-    f'data/eg/functions/tile/{tile_id}/search/area_effect_cloud.mcfunction')
+spawn_egg = data.get('spawn_egg', None)
+if spawn_egg is not None:
+    spawn_egg = Item(spawn_egg)
+    write_code(template(get_resource('template/tile/spawn_egg.mcfunction'), {
+        "id": tile_id,
+        'spawn_egg': spawn_egg.id,
+        'text': spawn_egg.text,
+        'color': f',"color":"{spawn_egg.color}"' if spawn_egg.color is not None else '',
+        'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if spawn_egg.enchant else ''
+    }),
+        f'data/eg/functions/tile/{tile_id}/spawn_egg.mcfunction')
 
-write_code(template(get_resource('template/tile/try_spawn/cancel.mcfunction'), {
-    "id": tile_id
-}),
-    f'data/eg/functions/tile/{tile_id}/try_spawn/cancel.mcfunction')
+    write_code(template(get_resource('template/tile/spawn_egg.json'), {
+        "id": tile_id,
+        'spawn_egg': spawn_egg.id,
+        'text': spawn_egg.text,
+        'color': f',\\"color\\":\\"{spawn_egg.color}\\"' if spawn_egg.color is not None else '',
+        'enchant': ',Enchantments:[{id:\\"minecraft:binding_curse\\",lvl:1}]' if spawn_egg.enchant else ''
+    }),
+        f'data/eg/loot_tables/{tile_id}.json')
 
-write_code(template(get_resource('template/tile/try_spawn/check.mcfunction'), {
-    "id": tile_id
-}),
-    f'data/eg/functions/tile/{tile_id}/try_spawn/check.mcfunction')
+    write_code(template(get_resource('template/tile/search/area_effect_cloud.mcfunction'), {
+        "id": tile_id
+    }),
+        f'data/eg/functions/tile/{tile_id}/search/area_effect_cloud.mcfunction')
 
-spawn_egg = Item(data['spawn_egg'])
-write_code(template(get_resource('template/tile/spawn_egg.mcfunction'), {
-    "id": tile_id,
-    'spawn_egg': spawn_egg.id,
-    'text': spawn_egg.text,
-    'color': f',"color":"{spawn_egg.color}"' if spawn_egg.color is not None else '',
-    'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if spawn_egg.enchant else ''
-}),
-    f'data/eg/functions/tile/{tile_id}/spawn_egg.mcfunction')
+    write_code(template(get_resource(f'template/tile/destroy_{setblock}.mcfunction'), {
+        "id": tile_id,
+        "block": container_block.id
+    }),
+        f'data/eg/functions/tile/{tile_id}/destroy.mcfunction')
 
-write_code(template(get_resource('template/tile/spawn_egg.json'), {
-    "id": tile_id,
-    'spawn_egg': spawn_egg.id,
-    'text': spawn_egg.text,
-    'color': f',\\"color\\":\\"{spawn_egg.color}\\"' if spawn_egg.color is not None else '',
-    'enchant': ',Enchantments:[{id:\\"minecraft:binding_curse\\",lvl:1}]' if spawn_egg.enchant else ''
-}),
-    f'data/eg/loot_tables/{tile_id}.json')
+    write_code(template(get_resource('template/tile/try_spawn/cancel.mcfunction'), {
+        "id": tile_id
+    }),
+        f'data/eg/functions/tile/{tile_id}/try_spawn/cancel.mcfunction')
 
-container_item = Item(data['entity']['item'])
-write_code(template(get_resource('template/tile/try_spawn/load.mcfunction'), {
-    "id": tile_id,
-    'item': container_item.id,
-    'item_text': container_item.text,
-    'item_color': f',"color":"{container_item.color}"' if container_item.color is not None else '',
-    'item_enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if container_item.enchant else '',
-    'block': container_block.id,
-    'block_text': container_block.text,
-    'block_color': f',"color":"{container_block.color}"' if container_block.color is not None else '',
-}),
-    f'data/eg/functions/tile/{tile_id}/try_spawn/load.mcfunction')
+    write_code(template(get_resource('template/tile/try_spawn/check.mcfunction'), {
+        "id": tile_id
+    }),
+        f'data/eg/functions/tile/{tile_id}/try_spawn/check.mcfunction')
+
+    update_values({f"eg:tile/{tile_id}/search/area_effect_cloud"},
+                  'data/eg/tags/functions/search/area_effect_cloud.json')
+
+    write_code(template(get_resource('template/tile/try_spawn/load.mcfunction'), {
+        "id": tile_id,
+        'item': container_item.id,
+        'item_text': container_item.text,
+        'item_color': f',"color":"{container_item.color}"' if container_item.color is not None else '',
+        'item_enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if container_item.enchant else '',
+        'block': container_block.id,
+        'block_text': container_block.text,
+        'block_color': f',"color":"{container_block.color}"' if container_block.color is not None else '',
+    }),
+        f'data/eg/functions/tile/{tile_id}/try_spawn/load.mcfunction')
+else:
+    dropped_item = Item(data['dropped_item'])
+    tag = ''
+    for k, v in dropped_item.tag.items():
+        tag += f',{k}:{v}'
+    write_code(template(get_resource('template/tile_dropped_item/dropped_item.mcfunction'), {
+        "id": tile_id,
+        'item': dropped_item.id,
+        'text': dropped_item.text,
+        'color': f',"color":"{dropped_item.color}"' if dropped_item.color is not None else '',
+        'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if dropped_item.enchant else '',
+        'tag': tag
+    }),
+        f'data/eg/functions/tile/{tile_id}/dropped_item.mcfunction')
+
+    write_code(template(get_resource('template/tile_dropped_item/dropped_item.json'), {
+        "id": tile_id,
+        'item': dropped_item.id,
+        'text': dropped_item.text,
+        'color': f',\\"color\\":\\"{dropped_item.color}\\"' if dropped_item.color is not None else '',
+        'enchant': ',Enchantments:[{id:\\"minecraft:binding_curse\\",lvl:1}]' if dropped_item.enchant else '',
+        'tag': tag
+    }),
+        f'data/eg/loot_tables/{tile_id}.json')
+
+    write_code(template(get_resource('template/tile/search/item.mcfunction'), {
+        "id": tile_id
+    }),
+        f'data/eg/functions/tile/{tile_id}/search/item.mcfunction')
+
+    destroy = data.get('destroy', None)
+    write_code(template(get_resource(f'template/tile_dropped_item/destroy_{setblock}.mcfunction'), {
+        "id": tile_id,
+        "block": container_block.id,
+        'load': f'execute positioned ~ ~-1 ~ run {destroy}' if destroy is not None else '',
+        'item': dropped_item.id,
+        'text': dropped_item.text,
+        'color': f',"color":"{dropped_item.color}"' if dropped_item.color is not None else '',
+        'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if dropped_item.enchant else '',
+        'tag': tag
+    }),
+        f'data/eg/functions/tile/{tile_id}/destroy.mcfunction')
+
+    write_code(template(get_resource('template/tile_dropped_item/try_spawn/check.mcfunction'), {
+        "id": tile_id
+    }),
+        f'data/eg/functions/tile/{tile_id}/try_spawn/check.mcfunction')
+
+    update_values({f"eg:tile/{tile_id}/search/item"},
+                  'data/eg/tags/functions/search/item.json')
+
+    load = data.get('load', None)
+    write_code(template(get_resource('template/tile_dropped_item/try_spawn/load.mcfunction'), {
+        'load': f'execute positioned ~ ~1 ~ run {load}' if load is not None else '',
+        "id": tile_id,
+        'item': container_item.id,
+        'item_text': container_item.text,
+        'item_color': f',"color":"{container_item.color}"' if container_item.color is not None else '',
+        'item_enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if container_item.enchant else '',
+        'block': container_block.id,
+        'block_text': container_block.text,
+        'block_color': f',"color":"{container_block.color}"' if container_block.color is not None else '',
+    }),
+        f'data/eg/functions/tile/{tile_id}/try_spawn/load.mcfunction')
 
 update_values(Slot.LABEL_ITEMS,
               'data/eg/tags/items/label.json')
 
 update_values({f"eg:tile/{tile_id}/search/item_frame"},
               'data/eg/tags/functions/search/item_frame.json')
-
-update_values({f"eg:tile/{tile_id}/search/area_effect_cloud"},
-              'data/eg/tags/functions/search/area_effect_cloud.json')
 
 write_code(get_resource('template/game/tick.mcfunction'),
            'data/eg/functions/tick.mcfunction')

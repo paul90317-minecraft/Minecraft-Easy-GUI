@@ -1,0 +1,20 @@
+{
+    "type": "chest",
+    "pools": [
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type":"item",
+                    "name": "<item>",
+                    "functions": [
+                        {
+                            "function":"set_nbt",
+                            "tag": "{display:{Name:'{\"text\":\"<text>\",\"italic\":false<color>}'},eg:{is:1b,type:tile,name:<id>}<enchant><tag>}"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
