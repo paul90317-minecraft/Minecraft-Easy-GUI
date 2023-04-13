@@ -62,7 +62,7 @@ class Slot:
     LABEL_ITEMS = {'cookie'}
 
     @staticmethod
-    def codeGen(tile_id: str, slot: int, object: dict) -> tuple[str, str]:
+    def codeGen(tile_id: str, slot: str | int, object: dict) -> tuple[str, str]:
         slot_type = object['type']
         if slot_type == 'label':
             item = Item(object['item'])
