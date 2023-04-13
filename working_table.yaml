@@ -1,0 +1,36 @@
+id: wt
+
+spawn_egg:
+  id: slime
+  text: Working Table
+  enchant: false
+  color: dark_green
+
+entity:
+  block:
+    id: barrel
+    text: Working Table
+    color: dark_green
+  item:
+    id: stone_pickaxe
+    text: Working Table
+    enchant: false
+    color: dark_green
+
+setblock: destroy
+
+slot:
+  3..8,12,14..15,17,21..26:
+    type: label
+    item:
+      id: black_stained_glass_pane
+  13:
+    type: label
+    item:
+      id: knowledge_book
+      text: Craft !
+      color: light_purple
+    click: 'function #cc:craft'
+  0..2,9..11,18..20,16:
+    type: drop
+    cond: never

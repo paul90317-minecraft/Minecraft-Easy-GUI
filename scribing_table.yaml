@@ -1,0 +1,41 @@
+id: st
+
+spawn_egg:
+  id: wandering_trader
+  text: Scribing Table
+  enchant: false
+  color: dark_purple
+
+setblock: destroy
+
+entity:
+  block:
+    id: barrel
+    text: Scribing Table
+    color: dark_purple
+  item:
+    id: writable_book
+    text: Scribing Table
+    enchant: true
+    color: dark_purple
+
+slot:
+  0..9,11,13,15,17..26:
+    type: label
+    item:
+      id: black_stained_glass_pane
+  10:
+    type: n_left
+    n: 1
+  12,16:
+    type: drop
+    cond: never
+  14:
+    type: label
+    item:
+      id: feather
+      enchant: true
+      text: Scribe !
+      color: yellow
+    click: 'function #cc:scribe'
+  

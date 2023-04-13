@@ -1,0 +1,36 @@
+id: backpack
+
+dropped_item:
+  id: leather_chestplate
+  text: Backpack
+  enchant: false
+  tag: {Unbreakable: 1b, HideFlags: 127, AttributeModifiers: []}
+
+load: 'function backpack:on/load'
+destroy: 'function backpack:on/destroy'
+setblock: replace
+
+entity:
+  block:
+    id: barrel
+    text: Backpack
+  item:
+    id: dirt
+    text: Backpack
+
+slot:
+  0..8,18..25:
+    type: label
+    item:
+      id: black_stained_glass_pane
+  26:
+    type: label
+    item:
+      id: barrier
+      text: Close
+      color: red
+    click: 'function eg:tile/backpack/destroy'
+  9..17:
+    type: drop
+    cond: if
+    data: 'eg'
