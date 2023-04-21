@@ -10,7 +10,7 @@
                     "functions": [
                         {
                             "function":"set_nbt",
-                            "tag": "{HideFlags:1<enchant>,display:{Name:'{\"text\":\"<text>\",\"italic\":false<color>}'},EntityTag:{id:\"minecraft:area_effect_cloud\",Tags:[eg.<id>]}}"
+                            "tag": "{HideFlags:1<enchant><tag>,display:{Name:'{\"text\":\"<text>\",\"italic\":false<color>}'},EntityTag:{id:\"minecraft:area_effect_cloud\",Tags:[eg.<id>]}}"
                         }
                     ]
                 }

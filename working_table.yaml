@@ -1,21 +1,20 @@
 id: wt
 
 spawn_egg:
-  id: slime
+  id: minecraft:cow
   text: Working Table
   enchant: false
   color: dark_green
+  tag: {CustomModelData: 54621502}
 
 entity:
   block:
-    id: barrel
+    id: minecraft:barrel
     text: Working Table
     color: dark_green
   item:
-    id: stone_pickaxe
-    text: Working Table
-    enchant: false
-    color: dark_green
+    id: minecraft:cow_spawn_egg
+    tag: {CustomModelData: 54621502}
 
 setblock: destroy
 
@@ -23,11 +22,11 @@ slot:
   3..8,12,14..15,17,21..26:
     type: label
     item:
-      id: black_stained_glass_pane
+      id: minecraft:black_stained_glass_pane
   13:
     type: label
     item:
-      id: knowledge_book
+      id: minecraft:knowledge_book
       text: Craft !
       color: light_purple
     click: 'function #cc:craft'

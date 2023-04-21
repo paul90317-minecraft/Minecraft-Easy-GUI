@@ -12,6 +12,11 @@ def template(code: str, pattern: dict[str, int | str]) -> str:
         code = code.replace(f'<{k}>', str(v))
     return code
 
+def tag_gen(data:dict):
+    tag = ''
+    for k, v in data.items():
+        tag += f',{k}:{v}'
+    return tag
 
 def write_code(code: str, filename: str) -> None:
     dirname = path.dirname(filename)
@@ -79,7 +84,8 @@ class Slot:
                     'text': item.text,
                     'color': f',"color":"{item.color}"' if item.color is not None else '',
                     'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if item.enchant else '',
-                    'click': click
+                    'click': click,
+                    'tag': tag_gen(item.tag)
                 })
             )
         elif slot_type == 'n_left':
@@ -197,7 +203,8 @@ if spawn_egg is not None:
         'spawn_egg': spawn_egg.id,
         'text': spawn_egg.text,
         'color': f',"color":"{spawn_egg.color}"' if spawn_egg.color is not None else '',
-        'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if spawn_egg.enchant else ''
+        'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if spawn_egg.enchant else '',
+        'tag': tag_gen(spawn_egg.tag)
     }),
         f'data/eg/functions/tile/{tile_id}/spawn_egg.mcfunction')
 
@@ -206,7 +213,8 @@ if spawn_egg is not None:
         'spawn_egg': spawn_egg.id,
         'text': spawn_egg.text,
         'color': f',\\"color\\":\\"{spawn_egg.color}\\"' if spawn_egg.color is not None else '',
-        'enchant': ',Enchantments:[{id:\\"minecraft:binding_curse\\",lvl:1}]' if spawn_egg.enchant else ''
+        'enchant': ',Enchantments:[{id:\\"minecraft:binding_curse\\",lvl:1}]' if spawn_egg.enchant else '',
+        'tag': tag_gen(spawn_egg.tag)
     }),
         f'data/eg/loot_tables/{tile_id}.json')
 
@@ -240,23 +248,21 @@ if spawn_egg is not None:
         'item_text': container_item.text,
         'item_color': f',"color":"{container_item.color}"' if container_item.color is not None else '',
         'item_enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if container_item.enchant else '',
+        'item_tag': tag_gen(container_item.tag),
         'block': container_block.id,
         'block_text': container_block.text,
-        'block_color': f',"color":"{container_block.color}"' if container_block.color is not None else '',
+        'block_color': f',"color":"{container_block.color}"' if container_block.color is not None else ''
     }),
         f'data/eg/functions/tile/{tile_id}/try_spawn/load.mcfunction')
 else:
     dropped_item = Item(data['dropped_item'])
-    tag = ''
-    for k, v in dropped_item.tag.items():
-        tag += f',{k}:{v}'
     write_code(template(get_resource('template/tile_dropped_item/dropped_item.mcfunction'), {
         "id": tile_id,
         'item': dropped_item.id,
         'text': dropped_item.text,
         'color': f',"color":"{dropped_item.color}"' if dropped_item.color is not None else '',
         'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if dropped_item.enchant else '',
-        'tag': tag
+        'tag': tag_gen(dropped_item.tag)
     }),
         f'data/eg/functions/tile/{tile_id}/dropped_item.mcfunction')
 
@@ -266,7 +272,7 @@ else:
         'text': dropped_item.text,
         'color': f',\\"color\\":\\"{dropped_item.color}\\"' if dropped_item.color is not None else '',
         'enchant': ',Enchantments:[{id:\\"minecraft:binding_curse\\",lvl:1}]' if dropped_item.enchant else '',
-        'tag': tag
+        'tag': tag_gen(dropped_item.tag)
     }),
         f'data/eg/loot_tables/{tile_id}.json')
 
@@ -284,7 +290,7 @@ else:
         'text': dropped_item.text,
         'color': f',"color":"{dropped_item.color}"' if dropped_item.color is not None else '',
         'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if dropped_item.enchant else '',
-        'tag': tag
+        'tag': tag_gen(dropped_item.tag)
     }),
         f'data/eg/functions/tile/{tile_id}/destroy.mcfunction')
 
@@ -304,9 +310,10 @@ else:
         'item_text': container_item.text,
         'item_color': f',"color":"{container_item.color}"' if container_item.color is not None else '',
         'item_enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if container_item.enchant else '',
+        'item_tag': tag_gen(container_item.tag),
         'block': container_block.id,
         'block_text': container_block.text,
-        'block_color': f',"color":"{container_block.color}"' if container_block.color is not None else '',
+        'block_color': f',"color":"{container_block.color}"' if container_block.color is not None else ''
     }),
         f'data/eg/functions/tile/{tile_id}/try_spawn/load.mcfunction')
 
