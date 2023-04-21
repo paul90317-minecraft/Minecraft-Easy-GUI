@@ -1,6 +1,5 @@
 scoreboard players set @s eg.temp 0
 execute unless block ~ ~ ~ air run scoreboard players set @s eg.temp 1
-execute unless block ~ ~1 ~ air run scoreboard players set @s eg.temp 1
 scoreboard players set @s eg.n 0
 execute at @e[type=item, distance=..5] run scoreboard players add @s eg.n 1
 scoreboard players set @s[scores={eg.n=2..}] eg.temp 1
