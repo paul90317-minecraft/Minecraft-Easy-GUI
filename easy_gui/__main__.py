@@ -59,8 +59,8 @@ class Tag:
 
 class Display:
     @staticmethod
-    def parse_jsontext(data:dict)->str:
-        if len(data)==0:
+    def parse_jsontext(data:dict|str)->str:
+        if isinstance(data,str) or len(data)==0:
             return '{}'
         ret='{'
         for k,v in data.items():
