@@ -60,8 +60,10 @@ class Tag:
 class Display:
     @staticmethod
     def parse_jsontext(data:dict|str)->str:
-        if isinstance(data,str) or len(data)==0:
-            return '{}'
+        if isinstance(data,str):
+            return data
+        if len(data)==0:
+            return '{"text":""}'
         ret='{'
         for k,v in data.items():
             if isinstance(v,str):
@@ -82,7 +84,7 @@ class Display:
         if 'Name' in data:
             data['Name']=Display.parse_jsontext(data['Name'])
         else:
-            data['Name']=''       
+            data['Name']='{"text":""}'       
         data["Lore"]= Display.parse_lore(data.get('Lore',[]))
 
 def template(code: str, pattern: dict[str, int | str]) -> str:
