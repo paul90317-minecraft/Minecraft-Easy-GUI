@@ -1,0 +1,30 @@
+id: wt
+type: spawn_egg
+block: minecraft:barrel
+item:
+  id: minecraft:cow_spawn_egg
+  tag: 
+    display:
+      Name: {text: Working Table, italic: false, color: dark_purple}
+    CustomModelData: 54621502
+
+load: 'say load'
+destroy: 'say destroy'
+tick: 'say tick'
+
+slot:
+  3..8,12,14..15,17,21..26:
+    type: label
+    item:
+      id: minecraft:black_stained_glass_pane
+  13:
+    type: label
+    item:
+      id: minecraft:knowledge_book
+      tag:
+        display:
+          Name: {text: Craft !,color: light_purple}
+    click: 'function #cc:craft'
+  0..2,9..11,18..20,16:
+    type: drop
+    cond: never

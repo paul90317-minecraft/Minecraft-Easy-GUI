@@ -5,18 +5,90 @@ import os
 import json
 from zipfile import ZipFile
 from os import path
+class Tag:
+    @staticmethod
+    def parse_list_to_str(data:list)->str:
+        if len(data)==0:
+            return '[]'
+        ret='['
+        for item in data:
+            if isinstance(item,list):
+                ret+=Tag.parse_list_to_str(item)+','
+            elif isinstance(item,dict):
+                ret+=Tag.parse_dict_to_str(item)+','
+            elif isinstance(item,str):
+                ret+=f'"{item}",'
+            elif isinstance(item,bool):
+                ret+=f"{str(item).lower()},"
+            else:
+                ret+=item+','
+        return ret[:-1]+']'
+    @staticmethod
+    def parse_dict_to_str(data:dict)->str:
+        if len(data)==0:
+            return '{}'
+        ret='{'
+        for k,v in data.items():
+            if isinstance(v,list):
+                ret+=f"'{k}':{Tag.parse_list_to_str(v)},"
+            elif isinstance(v,dict):
+                ret+=f"'{k}':{Tag.parse_dict_to_str(v)},"
+            elif isinstance(v,str):
+                ret+=f"'{k}':'{v}',"
+            elif isinstance(v,bool):
+                ret+=f"'{k}':{str(v).lower()},"
+            else:
+                ret+=f"'{k}':{v},"
+        return ret[:-1]+'}'
+    @staticmethod
+    def parse(data:dict)->str:
+        ret=''
+        for k,v in data.items():
+            if isinstance(v,list):
+                ret+=f",'{k}':{Tag.parse_list_to_str(v)}"
+            elif isinstance(v,dict):
+                ret+=f",'{k}':{Tag.parse_dict_to_str(v)}"
+            elif isinstance(v,str):
+                ret+=f",'{k}':'{v}'"
+            elif isinstance(v,bool):
+                ret+=f",'{k}':{str(v).lower()}"
+            else:
+                ret+=f",'{k}':{v}"
+        return ret[1:]
+    
 
+class Display:
+    @staticmethod
+    def parse_jsontext(data:dict)->str:
+        if len(data)==0:
+            return '{}'
+        ret='{'
+        for k,v in data.items():
+            if isinstance(v,str):
+                ret+=f'"{k}":"{v}",'
+            elif isinstance(v,bool):
+                ret+=f'"{k}":{str(v).lower()},'
+            else:
+                ret+=f'"{k}":{v},'
+        return ret[:-1]+'}'
+    @staticmethod
+    def parse_lore(lore:list)->list[str]:
+        ret=[]
+        for item in lore:
+            ret.append(Display.parse_jsontext(item)+',')
+        return ret
+    @staticmethod
+    def parse(data:dict) -> None:
+        if 'Name' in data:
+            data['Name']=Display.parse_jsontext(data['Name'])
+        else:
+            data['Name']=''       
+        data["Lore"]= Display.parse_lore(data.get('Lore',[]))
 
 def template(code: str, pattern: dict[str, int | str]) -> str:
     for k, v in pattern.items():
         code = code.replace(f'<{k}>', str(v))
     return code
-
-def tag_gen(data:dict):
-    tag = ''
-    for k, v in data.items():
-        tag += f',{k}:{v}'
-    return tag
 
 def write_code(code: str, filename: str) -> None:
     dirname = path.dirname(filename)
@@ -49,11 +121,26 @@ def update_values(new_values: set, filename: str) -> None:
 class Item:
     def __init__(self, data: dict) -> None:
         self.id = data['id']
-        self.enchant = data.get('enchant', False)
-        self.text = data.get('text', '')
-        self.color = data.get('color', None)
         self.tag = data.get('tag', {})
+        if not isinstance(self.tag,dict):
+            exit('The tag of the item must be dictionary.')
+        if 'display' not in self.tag:
+            self.tag['display']={}
+        if not isinstance(self.tag['display'],dict):
+            exit('item.tag.display need to be a dict')
+        Display.parse(self.tag['display'])
+        self.Name = self.tag['display']['Name']
+        self.tag:str = Tag.parse(self.tag)
 
+class Block:
+    def __init__(self,data:dict) -> None:
+        self.id = data['id']
+        self.tag = data.get('tag', {})
+        if not isinstance(self.tag,dict):
+            exit('The tag of the item must be dictionary.')
+        self.tag['CustomName']=Display.parse_jsontext(self.tag.get('CustomName',{}))
+        self.CustomName:str=self.tag['CustomName']
+        self.tag:str=Tag.parse_dict_to_str(self.tag)
 
 class Slot:
     LABEL_ENTRY = get_resource('template/slot_type/label/entry.mcfunction')
@@ -81,11 +168,8 @@ class Slot:
                 template(Slot.LABEL_EH, {
                     'slot': slot,
                     'item': item.id,
-                    'text': item.text,
-                    'color': f',"color":"{item.color}"' if item.color is not None else '',
-                    'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if item.enchant else '',
                     'click': click,
-                    'tag': tag_gen(item.tag)
+                    'tag': f',{item.tag}'
                 })
             )
         elif slot_type == 'n_left':
@@ -103,7 +187,11 @@ class Slot:
             )
         elif slot_type == 'drop':
             cond: str = object.get('cond', 'undefined')
-            tag: str = object.get('tag', None)
+            tag=object.get('tag', None)
+            if isinstance(tag,dict):
+                tag: str = Tag.parse(tag)
+            elif tag is not None:
+                exit('tag must be dict in drop slot')
             data: str = object.get('data', None)
             item_id: str = object.get('id', None)
             if cond == 'if':
@@ -162,13 +250,15 @@ with open(sys.argv[1], 'r') as f:
     data: dict = yaml.load(f, Loader=SafeLoader)
 
 tile_id = data['id']
-container_block = Item(data['entity']['block'])
-container_item = Item(data['entity']['item'])
-setblock = data.get('setblock', 'destroy')
+block_id=data['block']
+itemtype=data['type']
 entries = template(get_resource('template/tile/tick.mcfunction'), {
     "id": tile_id,
-    "block": container_block.id
+    "block": block_id
 })
+load_func = data.get('load', '')
+destroy_func = data.get('destroy', '')
+tick_func = data.get('tick', '')
 for slots, object in data['slot'].items():
     slots = str(slots).split(',')
     for slot in slots:
@@ -186,7 +276,7 @@ for slots, object in data['slot'].items():
             write_code(
                 eh, f'data/eg/functions/tile/{tile_id}/slot/{slot}/eh.mcfunction')
             entries += entry
-entries += data.get('tick', '')
+entries += tick_func
 write_code(entries,
            f'data/eg/functions/tile/{tile_id}/tick.mcfunction')
 
@@ -195,26 +285,20 @@ write_code(template(get_resource('template/tile/search/item_frame.mcfunction'), 
 }),
     f'data/eg/functions/tile/{tile_id}/search/item_frame.mcfunction')
 
-spawn_egg = data.get('spawn_egg', None)
-if spawn_egg is not None:
-    spawn_egg = Item(spawn_egg)
+container_item = Item(data.get('item', None))
+if itemtype == 'spawn_egg':
     write_code(template(get_resource('template/tile/spawn_egg.mcfunction'), {
         "id": tile_id,
-        'spawn_egg': spawn_egg.id,
-        'text': spawn_egg.text,
-        'color': f',"color":"{spawn_egg.color}"' if spawn_egg.color is not None else '',
-        'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if spawn_egg.enchant else '',
-        'tag': tag_gen(spawn_egg.tag)
+        'spawn_egg': container_item.id,
+        'tag':f',{container_item.tag}',
+        'text':container_item.Name
     }),
         f'data/eg/functions/tile/{tile_id}/spawn_egg.mcfunction')
 
     write_code(template(get_resource('template/tile/spawn_egg.json'), {
         "id": tile_id,
-        'spawn_egg': spawn_egg.id,
-        'text': spawn_egg.text,
-        'color': f',\\"color\\":\\"{spawn_egg.color}\\"' if spawn_egg.color is not None else '',
-        'enchant': ',Enchantments:[{id:\\"minecraft:binding_curse\\",lvl:1}]' if spawn_egg.enchant else '',
-        'tag': tag_gen(spawn_egg.tag)
+        'spawn_egg': container_item.id,
+        'tag': f',{container_item.tag}'.replace('"','\\"')
     }),
         f'data/eg/loot_tables/{tile_id}.json')
 
@@ -223,9 +307,13 @@ if spawn_egg is not None:
     }),
         f'data/eg/functions/tile/{tile_id}/search/area_effect_cloud.mcfunction')
 
-    write_code(template(get_resource(f'template/tile/destroy_{setblock}.mcfunction'), {
+    write_code(template(get_resource(f'template/tile/destroy.mcfunction'), {
         "id": tile_id,
-        "block": container_block.id
+        "block": block_id,
+        "text":container_item.Name,
+        "load":destroy_func,
+        "tag":f',{container_item.tag}',
+        "spawn_egg":container_item.id
     }),
         f'data/eg/functions/tile/{tile_id}/destroy.mcfunction')
 
@@ -242,37 +330,19 @@ if spawn_egg is not None:
     update_values({f"eg:tile/{tile_id}/search/area_effect_cloud"},
                   'data/eg/tags/functions/search/area_effect_cloud.json')
 
-    write_code(template(get_resource('template/tile/try_spawn/load.mcfunction'), {
-        "id": tile_id,
-        'item': container_item.id,
-        'item_text': container_item.text,
-        'item_color': f',"color":"{container_item.color}"' if container_item.color is not None else '',
-        'item_enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if container_item.enchant else '',
-        'item_tag': tag_gen(container_item.tag),
-        'block': container_block.id,
-        'block_text': container_block.text,
-        'block_color': f',"color":"{container_block.color}"' if container_block.color is not None else ''
-    }),
-        f'data/eg/functions/tile/{tile_id}/try_spawn/load.mcfunction')
-else:
-    dropped_item = Item(data['dropped_item'])
+elif itemtype == 'drop':
     write_code(template(get_resource('template/tile_dropped_item/dropped_item.mcfunction'), {
         "id": tile_id,
-        'item': dropped_item.id,
-        'text': dropped_item.text,
-        'color': f',"color":"{dropped_item.color}"' if dropped_item.color is not None else '',
-        'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if dropped_item.enchant else '',
-        'tag': tag_gen(dropped_item.tag)
+        'item': container_item.id,
+        'text': container_item.Name,
+        'tag': f',{container_item.tag}'
     }),
         f'data/eg/functions/tile/{tile_id}/dropped_item.mcfunction')
 
     write_code(template(get_resource('template/tile_dropped_item/dropped_item.json'), {
         "id": tile_id,
-        'item': dropped_item.id,
-        'text': dropped_item.text,
-        'color': f',\\"color\\":\\"{dropped_item.color}\\"' if dropped_item.color is not None else '',
-        'enchant': ',Enchantments:[{id:\\"minecraft:binding_curse\\",lvl:1}]' if dropped_item.enchant else '',
-        'tag': tag_gen(dropped_item.tag)
+        'item': container_item.id,
+        'tag': f',{container_item.tag}'.replace('"','\\"')
     }),
         f'data/eg/loot_tables/{tile_id}.json')
 
@@ -281,16 +351,14 @@ else:
     }),
         f'data/eg/functions/tile/{tile_id}/search/item.mcfunction')
 
-    destroy = data.get('destroy', None)
-    write_code(template(get_resource(f'template/tile_dropped_item/destroy_{setblock}.mcfunction'), {
+    
+    write_code(template(get_resource(f'template/tile_dropped_item/destroy.mcfunction'), {
         "id": tile_id,
-        "block": container_block.id,
-        'load': f'execute positioned ~ ~-1 ~ run {destroy}' if destroy is not None else '',
-        'item': dropped_item.id,
-        'text': dropped_item.text,
-        'color': f',"color":"{dropped_item.color}"' if dropped_item.color is not None else '',
-        'enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if dropped_item.enchant else '',
-        'tag': tag_gen(dropped_item.tag)
+        "block": block_id,
+        'load': destroy_func,
+        'item': container_item.id,
+        "text":container_item.Name,
+        'tag': f',{container_item.tag}'
     }),
         f'data/eg/functions/tile/{tile_id}/destroy.mcfunction')
 
@@ -301,19 +369,16 @@ else:
 
     update_values({f"eg:tile/{tile_id}/search/item"},
                   'data/eg/tags/functions/search/item.json')
+else:
+    exit('type can only be drop or spawn_egg')
 
-    load = data.get('load', None)
-    write_code(template(get_resource('template/tile_dropped_item/try_spawn/load.mcfunction'), {
-        'load': f'execute positioned ~ ~1 ~ run {load}' if load is not None else '',
+write_code(template(get_resource('template/tile/try_spawn/load.mcfunction'), {
+        'load': load_func,
         "id": tile_id,
         'item': container_item.id,
-        'item_text': container_item.text,
-        'item_color': f',"color":"{container_item.color}"' if container_item.color is not None else '',
-        'item_enchant': ',Enchantments:[{id:"minecraft:binding_curse",lvl:1}]' if container_item.enchant else '',
-        'item_tag': tag_gen(container_item.tag),
-        'block': container_block.id,
-        'block_text': container_block.text,
-        'block_color': f',"color":"{container_block.color}"' if container_block.color is not None else ''
+        'tag': container_item.tag,
+        'block': block_id,
+        'text': container_item.Name,
     }),
         f'data/eg/functions/tile/{tile_id}/try_spawn/load.mcfunction')
 

@@ -10,7 +10,7 @@
                     "functions": [
                         {
                             "function":"set_nbt",
-                            "tag": "{display:{Name:'{\"text\":\"<text>\",\"italic\":false<color>}'},eg:{is:1b,type:tile,name:<id>}<enchant><tag>}"
+                            "tag": "{eg:{is:1b,type:tile,name:<id>}<tag>}"
                         }
                     ]
                 }
