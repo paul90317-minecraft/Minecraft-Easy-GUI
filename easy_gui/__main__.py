@@ -283,24 +283,24 @@ entries += tick_func
 write_code(entries,
            f'data/eg/functions/tile/{tile_id}/tick.mcfunction')
 
-write_code(template(get_resource('template/tile/search/item_frame.mcfunction'), {
+write_code(template(get_resource('template/tile/search/glow_item_frame.mcfunction'), {
     "id": tile_id
 }),
-    f'data/eg/functions/tile/{tile_id}/search/item_frame.mcfunction')
+    f'data/eg/functions/tile/{tile_id}/search/glow_item_frame.mcfunction')
 
 container_item = Item(data.get('item', None))
 
-write_code(template(get_resource('template/game/powered_by.mcfunction'), {
+write_code(template(get_resource('template/game/made_by.mcfunction'), {
     "id": tile_id,
     'text': container_item.Name,
     'itemtype': 'dropped_item' if itemtype=='drop' else 'spawn_egg',
     'website': website
 }),
-    f'data/eg/functions/tile/{tile_id}/powered_by.mcfunction')
+    f'data/eg/functions/tile/{tile_id}/made_by.mcfunction')
 
 update_values({
-    f'eg:tile/{tile_id}/powered_by'
-},'data/eg/tags/functions/powered_by.json')
+    f'eg:tile/{tile_id}/made_by'
+},'data/eg/tags/functions/made_by.json')
 
 if itemtype == 'spawn_egg':
     write_code(template(get_resource('template/tile/spawn_egg.mcfunction'), {
@@ -401,8 +401,8 @@ write_code(template(get_resource('template/tile/try_spawn/load.mcfunction'), {
 update_values(Slot.LABEL_ITEMS,
               'data/eg/tags/items/label.json')
 
-update_values({f"eg:tile/{tile_id}/search/item_frame"},
-              'data/eg/tags/functions/search/item_frame.json')
+update_values({f"eg:tile/{tile_id}/search/glow_item_frame"},
+              'data/eg/tags/functions/search/glow_item_frame.json')
 
 write_code(get_resource('template/game/tick.mcfunction'),
            'data/eg/functions/tick.mcfunction')

@@ -27,7 +27,7 @@ load: 'say load'
 destroy: 'say destroy'
 tick: 'say tick'
 ```
-* `load` is run when the GUI block is spawn and the item (or area cloud effect if the type is `spawn_egg`) haven't be killed, it run by the item. The GUI block have a block (barrel in this example) and an entity (always item_frame). The entity have a tag called `egset`, you can use it to do the data load, for example, you can copy the display name of the item to the custom name of the entity by `/data` command.
+* `load` is run when the GUI block is spawn and the item (or area cloud effect if the type is `spawn_egg`) haven't be killed, it run by the item. The GUI block have a block (barrel in this example) and an entity (always glow_item_frame). The entity have a tag called `egset`, you can use it to do the data load, for example, you can copy the display name of the item to the custom name of the entity by `/data` command.
     ```yaml
     load: 'data modify entity @e[tag=egset,limit=1] CustomName set from entity @s Item.tag.display.Name'
     ``` 
@@ -35,8 +35,8 @@ tick: 'say tick'
     ```yaml
     load: 'data modify block ~ ~ ~ CustomName set from entity @s Item.tag.display.Name'
     ``` 
-* `destroy` is run when the item_frame is summon and the GUI block is haven't be killed. The drop also have a tag `egset`, you can use `entity @e[tag=egset,type=ite,sort=nearest,limit=1]` to locate it. You can use `block ~ ~ ~` to locate the block.
-* `tick` is run by the item_frame every tick.
+* `destroy` is run when the glow_item_frame is summon and the GUI block is haven't be killed. The drop also have a tag `egset`, you can use `entity @e[tag=egset,type=ite,sort=nearest,limit=1]` to locate it. You can use `block ~ ~ ~` to locate the block.
+* `tick` is run by the glow_item_frame every tick.
 ## Slot Behavior
 ```yaml
 slot:
@@ -90,7 +90,7 @@ item:
             Name: {text: Close, color: red, italic: false}
 click: 'say close'
 ```
-`item` is in NBT Format. `click` is a function, it runs by the item_frame when the label is clicked.
+`item` is in NBT Format. `click` is a function, it runs by the glow_item_frame when the label is clicked.
 ### n_left
 ```yaml
 10:

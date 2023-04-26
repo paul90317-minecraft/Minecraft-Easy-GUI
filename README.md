@@ -6,13 +6,13 @@ This repos only use the package `pyyaml`, see `requirements.txt`
 pip install pyyaml
 ```
 ### execute
-Download release file to run (recommended for user)
+Download [release file](https://github.com/paul90317/Minecraft-Easy-GUI/releases) to run (recommended for user)
 ```
-python ./easy_GUI.zip ./your_container_settings.yaml
+python ./easy_gui.zip ./your_container_settings.yaml
 ```
 Or you can just run under this repos (recommended for developer)
 ```
-python ./easy_GUI/ ./your_container_settings.yaml
+python ./easy_gui/ ./your_container_settings.yaml
 ```
 It create `pack.mcmeta` and `data` in root automatically
 ## Examples
