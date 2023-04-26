@@ -12,6 +12,8 @@ load: 'say load'
 destroy: 'say destroy'
 tick: 'say tick'
 
+website: https://modrinth.com/datapack/custom-craft
+
 slot:
   3..8,12,14..15,17,21..26:
     type: label

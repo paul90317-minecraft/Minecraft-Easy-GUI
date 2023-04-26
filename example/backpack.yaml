@@ -11,6 +11,8 @@ item:
     AttributeModifiers: []
     CustomModelData: 54621503
 
+website: https://modrinth.com/datapack/upgradable-backpack
+
 load: 'say load'
 destroy: 'say destroy'
 tick: 'say tick'

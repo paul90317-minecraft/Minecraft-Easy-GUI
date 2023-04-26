@@ -128,7 +128,7 @@ class Item:
             exit('The tag of the item must be dictionary.')
         if 'display' not in self.tag:
             self.tag['display']={}
-        if not isinstance(self.tag['display'],dict):
+        elif not isinstance(self.tag['display'],dict):
             exit('item.tag.display need to be a dict')
         Display.parse(self.tag['display'])
         self.Name = self.tag['display']['Name']
@@ -261,6 +261,7 @@ entries = template(get_resource('template/tile/tick.mcfunction'), {
 load_func = data.get('load', '')
 destroy_func = data.get('destroy', '')
 tick_func = data.get('tick', '')
+website = data.get('website','')
 for slots, object in data['slot'].items():
     slots = str(slots).split(',')
     for slot in slots:
@@ -288,6 +289,19 @@ write_code(template(get_resource('template/tile/search/item_frame.mcfunction'), 
     f'data/eg/functions/tile/{tile_id}/search/item_frame.mcfunction')
 
 container_item = Item(data.get('item', None))
+
+write_code(template(get_resource('template/game/powered_by.mcfunction'), {
+    "id": tile_id,
+    'text': container_item.Name,
+    'itemtype': 'dropped_item' if itemtype=='drop' else 'spawn_egg',
+    'website': website
+}),
+    f'data/eg/functions/tile/{tile_id}/powered_by.mcfunction')
+
+update_values({
+    f'eg:tile/{tile_id}/powered_by'
+},'data/eg/tags/functions/powered_by.json')
+
 if itemtype == 'spawn_egg':
     write_code(template(get_resource('template/tile/spawn_egg.mcfunction'), {
         "id": tile_id,
