@@ -14,13 +14,10 @@ item:
     HideFlags: 127
     AttributeModifiers: []
     CustomModelData: 54621503
-
-website: https://modrinth.com/datapack/upgradable-backpack
 ```
 * `id` is for tikc mcfunction to recongnize what GUI block it is.
 * `type` is `drop` or `spawn_egg`. `drop` means that it summon GUI item when you drop the block on the ground; `spawn_egg` means the item is a spawn_egg.
 * `item` is the item of the GUI block, it's in Minecraft item NBT format. The item also show at the buttom of the GUI block when it turn into the GUI block. You can make texture of it by adding `CustomModelData` tag.
-* `website` is a link, it shows when the game loads. It very useful for users to credit on you.
 ## Events
 ```yaml
 load: 'say load'

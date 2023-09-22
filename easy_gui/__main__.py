@@ -5,7 +5,7 @@ import os
 import json
 from zipfile import ZipFile
 from os import path
-from . import Tag,Display
+import Tag,Display
 
 
 def template(code: str, pattern: dict[str, int | str]) -> str:
@@ -182,7 +182,6 @@ entries = template(get_resource('template/tile/tick.mcfunction'), {
 load_func = data.get('load', '')
 destroy_func = data.get('destroy', '')
 tick_func = data.get('tick', '')
-website = data.get('website','')
 for slots, object in data['slot'].items():
     slots = str(slots).split(',')
     for slot in slots:
@@ -215,7 +214,6 @@ write_code(template(get_resource('template/game/made_by.mcfunction'), {
     "id": tile_id,
     'text': container_item.Name,
     'itemtype': 'dropped_item' if itemtype=='drop' else 'spawn_egg',
-    'website': website
 }),
     f'data/eg/functions/tile/{tile_id}/made_by.mcfunction')
 
