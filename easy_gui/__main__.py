@@ -5,87 +5,8 @@ import os
 import json
 from zipfile import ZipFile
 from os import path
-class Tag:
-    @staticmethod
-    def parse_list_to_str(data:list)->str:
-        if len(data)==0:
-            return '[]'
-        ret='['
-        for item in data:
-            if isinstance(item,list):
-                ret+=Tag.parse_list_to_str(item)+','
-            elif isinstance(item,dict):
-                ret+=Tag.parse_dict_to_str(item)+','
-            elif isinstance(item,str):
-                ret+=f'"{item}",'
-            elif isinstance(item,bool):
-                ret+=f"{str(item).lower()},"
-            else:
-                ret+=item+','
-        return ret[:-1]+']'
-    @staticmethod
-    def parse_dict_to_str(data:dict)->str:
-        if len(data)==0:
-            return '{}'
-        ret='{'
-        for k,v in data.items():
-            if isinstance(v,list):
-                ret+=f"'{k}':{Tag.parse_list_to_str(v)},"
-            elif isinstance(v,dict):
-                ret+=f"'{k}':{Tag.parse_dict_to_str(v)},"
-            elif isinstance(v,str):
-                ret+=f"'{k}':'{v}',"
-            elif isinstance(v,bool):
-                ret+=f"'{k}':{str(v).lower()},"
-            else:
-                ret+=f"'{k}':{v},"
-        return ret[:-1]+'}'
-    @staticmethod
-    def parse(data:dict)->str:
-        ret=''
-        for k,v in data.items():
-            if isinstance(v,list):
-                ret+=f",'{k}':{Tag.parse_list_to_str(v)}"
-            elif isinstance(v,dict):
-                ret+=f",'{k}':{Tag.parse_dict_to_str(v)}"
-            elif isinstance(v,str):
-                ret+=f",'{k}':'{v}'"
-            elif isinstance(v,bool):
-                ret+=f",'{k}':{str(v).lower()}"
-            else:
-                ret+=f",'{k}':{v}"
-        return ret[1:]
-    
+from . import Tag,Display
 
-class Display:
-    @staticmethod
-    def parse_jsontext(data:dict|str)->str:
-        if isinstance(data,str):
-            return data
-        if len(data)==0:
-            return '{"text":""}'
-        ret='{'
-        for k,v in data.items():
-            if isinstance(v,str):
-                ret+=f'"{k}":"{v}",'
-            elif isinstance(v,bool):
-                ret+=f'"{k}":{str(v).lower()},'
-            else:
-                ret+=f'"{k}":{v},'
-        return ret[:-1]+'}'
-    @staticmethod
-    def parse_lore(lore:list)->list[str]:
-        ret=[]
-        for item in lore:
-            ret.append(Display.parse_jsontext(item)+',')
-        return ret
-    @staticmethod
-    def parse(data:dict) -> None:
-        if 'Name' in data:
-            data['Name']=Display.parse_jsontext(data['Name'])
-        else:
-            data['Name']='{"text":""}'       
-        data["Lore"]= Display.parse_lore(data.get('Lore',[]))
 
 def template(code: str, pattern: dict[str, int | str]) -> str:
     for k, v in pattern.items():
@@ -424,3 +345,6 @@ update_values({"eg:tick"},
 
 update_values({"eg:load"},
               'data/minecraft/tags/functions/load.json')
+
+update_values({"air","cave_air"},
+              'data/eg/tags/blocks/air.json')
